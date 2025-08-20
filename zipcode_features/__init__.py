@@ -1,7 +1,7 @@
 __version__ = '0.0.1'
 
 import zipcodes
-from uszipcodes.search import SearchEngine
+from uszipcode.search import SearchEngine
 import pandas as pd
 
 def us_get_demographics(state: str, city: str = None, zip_list: list = None) -> pd.DataFrame:
@@ -22,10 +22,15 @@ def us_get_demographics(state: str, city: str = None, zip_list: list = None) -> 
     https://github.com/EricSchles/uszipcode-project
     """
     search = SearchEngine()
-    payload = {
-        "state": state,
-        "city": city
-    }
+    if city is None:
+        payload = {
+            "state": state
+        }
+    else:
+        payload = {
+            "state": state,
+            "city": city
+        }
     if zip_list is None:
         zipcode_and_demo = [
             [zipcode["zip_code"], search.by_zipcode(zipcode["zip_code"])]
