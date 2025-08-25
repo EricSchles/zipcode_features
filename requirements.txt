@@ -1,2 +1,2 @@
-git+https://github.com/EricSchles/uszipcode-project
+zipcode3
 zipcodes

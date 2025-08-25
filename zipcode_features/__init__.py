@@ -1,7 +1,7 @@
-__version__ = '0.0.1'
+__version__ = '0.0.4'
 
 import zipcodes
-from uszipcode.search import SearchEngine
+from zipcode3.search import SearchEngine
 import pandas as pd
 
 def us_get_demographics(state: str, city: str = None, zip_list: list = None) -> pd.DataFrame:

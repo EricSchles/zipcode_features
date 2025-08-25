@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="zipcode_features",
-    version="0.0.1",
+    version="0.0.4",
     description="A tool to get features based on census data from zipcodes",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -32,5 +32,5 @@ setup(
         "zipcode_features",
     ],
     include_package_data=True,
-    install_requires=["zipcodes", "pandas"],
+    install_requires=["zipcodes", "pandas", "zipcode3"],
 )
