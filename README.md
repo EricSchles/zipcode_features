@@ -12,7 +12,7 @@ import pandas as pd
 
 def _get_cbsa_data():
     return pd.read_excel(
-        "https://github.com/EricSchles/zipcode_features/blob/main/zipcode_features/CBSA_ZIP_122025.xlsx",
+        "https://github.com/EricSchles/zipcode_features/raw/refs/heads/main/zipcode_features/CBSA_ZIP_122025.xlsx",
         sheet_name='Export Worksheet'
     )[["CBSA", "ZIP"]]
 
