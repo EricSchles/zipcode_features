@@ -100,3 +100,72 @@ mapping = requests.get("https://raw.githubusercontent.com/EricSchles/zipcode_fea
 df["cbsa_name"] = df["CBSA"].map(mapping)
 df = df.drop("CBSA", axis=1)
 ```
+
+## Adding County
+
+
+```python
+from zipcode_features import us_get_demographics
+import pandas as pd
+
+def _get_fips_data():
+    df = pd.read_excel(
+        "https://github.com/EricSchles/zipcode_features/raw/refs/heads/main/zipcode_features/ZIP_COUNTY_122025.xlsx",
+	dtype={'ZIP': 'str'},
+        sheet_name='Export Worksheet'
+    )[["COUNTY", "ZIP"]]
+    df["COUNTY"] = df['COUNTY'].astype(str)
+    return df.dropna()
+
+demo = us_get_demographics(state="NY")
+fips_zip_map = _get_fips_data()
+df = pd.merge(demo, fips_zip_map, how="left", left_on="zipcode", right_on="ZIP")
+df = df.drop("ZIP", axis=1)
+df = df.dropna()
+```
+
+## Adding Regional Prices
+
+```bash
+python -m pip install beaapi us
+```
+
+```python
+from zipcode_features import us_get_demographics
+import pandas as pd
+import beaapi
+import us
+
+df = us_get_demographics(state="NY")
+
+# get your key here: https://apps.bea.gov/API/signup/
+beakey = ""
+
+dataset="Regional"
+table = "SARPP"
+regional_cpi = beaapi.get_data(
+    userid=beakey,
+    method='GetData',
+    datasetname=dataset, # National Income and Product Accounts
+    tablename=table, # Table 1.1.1
+    GeoFips="STATE",
+    LineCode="1",
+    ResultFormat="json"
+    #Frequency='A',      # Annual data
+)[["GeoName", "DataValue"]]
+regional_cpi = regional_cpi[regional_cpi["GeoName"] != "United States"]
+regional_cpi["year"] = ["2020", "2021", "2022", "2023", "2024"] * 51
+abbreviations_map = us.states.mapping('name', 'abbr')
+regional_cpi["state"] = regional_cpi["GeoName"].map(abbreviations_map)
+regional_cpi["cpi"] = regional_cpi["DataValue"]
+regional_cpi = regional_cpi.drop("DataValue", axis=1)
+regional_cpi = regional_cpi[regional_cpi["year"] == "2024"]
+regional_cpi["cpi_year"] = regional_cpi["year"]
+regional_cpi.drop("year", axis=1)
+df = pd.merge(df, regional_cpi, how='left', on="state")
+df["regional_cpi"] = df["cpi"]
+df = df.drop("cpi", axis=1)
+```
+
+
+
