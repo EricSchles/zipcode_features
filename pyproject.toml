@@ -1,0 +1,37 @@
+[build-system]
+# Tells uv or pip what engine to use to build the package wheel
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zipcode-features"
+version = "0.0.7"
+description = "A Python package to process and extract features from zipcode data."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Eric Schles", email = "your.email@example.com" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    # Add your runtime dependencies here (e.g., pandas, polars, feast, etc.)
+    "zipcodes",
+    "pandas",
+    "numpy<=2.3.5",
+    "zipcode3==1.0.3",
+    
+]
+
+[project.urls]
+Homepage = "https://github.com/EricSchles/zipcode_features"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zipcode_features"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/zipcode_features/data" = "zipcode_features/data"
