@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zipcode-features"
-version = "0.0.7"
+version = "0.0.9"
 description = "A Python package to process and extract features from zipcode data."
 readme = "README.md"
 requires-python = ">=3.10"
