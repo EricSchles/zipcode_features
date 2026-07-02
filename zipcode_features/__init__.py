@@ -1,9 +1,44 @@
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 import zipcodes
 from zipcode3.search import SearchEngine
 import pandas as pd
+import json
 
+def zipcode_mapper(x):
+    if x["ZIP_len"] == 3: 
+        return "00" + x["ZIP"]
+    elif x["ZIP_len"] == 4: 
+        return "0" + x["ZIP"]
+    else:
+        return x["ZIP"]
+    
+def _get_zip_to_cbsa_code() -> dict:
+    """
+    This method gets a mapping from zipcode to cbsa code
+    mapping is of the form:
+    {"zip code": "cbsa code"}
+    """
+
+    df = pd.read_csv("CBSA_ZIP_122025.csv", dtype={'ZIP': str, "CBSA": str})
+    df["ZIP_len"] = df["ZIP"].apply(lambda x: len(x))
+    df["ZIP"] = df.apply(zipcode_mapper, axis=1)
+    return df[["ZIP", "CBSA"]].to_dict()
+
+def _get_cbsa_code_to_cbsa_name() -> dict:
+    """
+    This method gets a mapping from cbsa code to name
+    {cbsa code: cbsa name}
+    """
+    code_to_name = json.load(open("cbsa_codes.json"))
+    df = pd.DataFrame(columns=["code", "name"])
+    df["name"] = code_to_name.values()
+    df["code"] = code_to_name.keys()
+    df["name"] = df["name"].str.replace(" -", "-")
+    df["name"] = df["name"].str.split().str.join(' ')
+    return df.to_dict()
+
+    
 def us_get_demographics(state: str, city: str = None, zip_list: list = None) -> pd.DataFrame:
     """
     This gets demographic information for associated with zipcodes in the United States of America.
@@ -43,4 +78,10 @@ def us_get_demographics(state: str, city: str = None, zip_list: list = None) -> 
         tmp_dict = zipcode_and_demo[index][1].to_dict()
         tmp_dict["zip_code"] = zipcode_and_demo[index][0]
         demographics.append(tmp_dict)
-    return pd.DataFrame(demographics)
+    df = pd.DataFrame(demographics)
+    zip_to_cbsa = _get_zip_to_cbsa_code()
+    df["cbsa"] = df["zip_code"].map(zip_to_cbsa)
+    cbsa_code_to_name = _get_cbsa_code_to_cbsa_name()
+    df["cbsa_name"] = df["cbsa"].map(cbsa_code_to_name)
+    return df
+    
