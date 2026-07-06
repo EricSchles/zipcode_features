@@ -5,6 +5,7 @@ from zipcode3.search import SearchEngine
 from importlib import resources
 import pandas as pd
 import json
+from functools import partial
 
 zip_to_fips = {
     '00544': '36103', # Suffolk County
@@ -142,14 +143,22 @@ zip_to_fips = {
     '14925': '36015', # Chemung County
 }
 
-def zipcode_mapper(x):
-    if x["ZIP_len"] == 3: 
-        return "00" + x["ZIP"]
-    elif x["ZIP_len"] == 4: 
-        return "0" + x["ZIP"]
+def code_mapper(col, x):
+    if x[f"{col}_len"] == 2:
+        return "000" + x[col]
+    if x[f"{col}_len"] == 3: 
+        return "00" + x[col]
+    elif x[f"{col}_len"] == 4: 
+        return "0" + x[col]
     else:
-        return x["ZIP"]
-    
+        return x[col]
+
+def map_zip_to_cbsa(zip_to_cbsa, zip_code):
+    if zip_code in zip_to_cbsa:
+        return zip_to_cbsa[zip_code]
+    else:
+        return '00000'
+
 def _get_zip_to_cbsa_code() -> dict:
     """
     This method gets a mapping from zipcode to cbsa code
@@ -158,10 +167,15 @@ def _get_zip_to_cbsa_code() -> dict:
     """
     with resources.path("zipcode_features.data", "CBSA_ZIP_122025.csv") as csv_path:
         df = pd.read_csv(csv_path, dtype={'ZIP': str, "CBSA": str})
-    df["ZIP_len"] = df["ZIP"].apply(lambda x: len(x))
-    df["ZIP"] = df.apply(zipcode_mapper, axis=1)
-    return df.set_index('ZIP')['CBSA'].to_dict()
+    df = correct_code(df, "ZIP")
+    mapping = df.set_index('ZIP')['CBSA'].to_dict()
+    return partial(map_zip_to_cbsa, mapping)
 
+def map_cbsa_code_to_name(cbsa_code_to_name, cbsa_code):
+    if cbsa_code in cbsa_code_to_name:
+        return cbsa_code_to_name[cbsa_code]
+    else:
+        return 'Unknown'
 
 def _get_cbsa_code_to_cbsa_name() -> dict:
     """
@@ -176,17 +190,32 @@ def _get_cbsa_code_to_cbsa_name() -> dict:
     df["name"] = df["name"].str.replace(" -", "-")
     df["name"] = df["name"].str.split().str.join(' ')
     code_to_name = df.set_index('code')['name'].to_dict()
-    return code_to_name
+    return partial(map_cbsa_code_to_name, code_to_name)
+
+def correct_code(df: pd.DataFrame, col: str) -> pd.DataFrame:
+    df[f"{col}_len"] = df[col].apply(lambda x: len(x))
+    corrector = partial(code_mapper, col)
+    df[col] = df.apply(corrector, axis=1)
+    return df
+
+def map_zip_code_to_fips_code(zip_code_to_fips_code, zip_code):
+    if zip_code in zip_code_to_fips_code:
+        return zip_code_to_fips_code[zip_code]
+    else:
+        return '000000'
+    #fips codes are 5 digits long, so this should always
+    #map to nothing
 
 def _get_zip_to_fips_code() -> dict:
     with resources.path("zipcode_features.data", "ZIP_COUNTY_122025.csv") as csv_path:
         df = pd.read_csv(csv_path, dtype={'ZIP': str, "COUNTY": str})
-    df["ZIP_len"] = df["ZIP"].apply(lambda x: len(x))
-    df["ZIP"] = df.apply(zipcode_mapper, axis=1)
+
+    df = correct_code(df, "ZIP")
+    df = correct_code(df, "COUNTY")
     df = df[["ZIP", "COUNTY"]]
     zip_to_county = df.set_index('ZIP')['COUNTY'].to_dict()
     zip_to_county.update(zip_to_fips)
-    return zip_to_county
+    return partial(map_zip_code_to_fips_code, zip_to_county)
     
 def _get_bls_data() -> pd.DataFrame:
     csvs = [
@@ -237,7 +266,7 @@ def _get_bls_data() -> pd.DataFrame:
     final_df = final_df.rename({"area_fips": "fips_code"}, axis=1)
     final_df["fips_code"] = final_df["fips_code"].astype(str)
     return final_df
-                       
+
     
 def us_get_demographics(state: str, city: str = None, zip_list: list = None) -> pd.DataFrame:
     """
@@ -282,11 +311,11 @@ def us_get_demographics(state: str, city: str = None, zip_list: list = None) -> 
         demographics.append(tmp_dict)
     df = pd.DataFrame(demographics)
     zip_to_cbsa = _get_zip_to_cbsa_code()
-    df["cbsa"] = df["zip_code"].map(zip_to_cbsa)
+    df["cbsa"] = df["zip_code"].apply(zip_to_cbsa)
     cbsa_code_to_name = _get_cbsa_code_to_cbsa_name()
-    df["cbsa_name"] = df["cbsa"].map(cbsa_code_to_name)
+    df["cbsa_name"] = df["cbsa"].apply(cbsa_code_to_name)
     zip_code_to_fips_code = _get_zip_to_fips_code()
-    df["fips_code"] = df["zip_code"].map(zip_code_to_fips_code)
+    df["fips_code"] = df["zip_code"].apply(zip_code_to_fips_code)
     bls_data = _get_bls_data()
     return pd.merge(df, bls_data, how="inner", on="fips_code")
 
