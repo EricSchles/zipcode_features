@@ -175,7 +175,8 @@ def _get_cbsa_code_to_cbsa_name() -> dict:
     df["code"] = code_to_name.keys()
     df["name"] = df["name"].str.replace(" -", "-")
     df["name"] = df["name"].str.split().str.join(' ')
-    return df.to_dict()
+    code_to_name = df.set_index('code')['name'].to_dict()
+    return code_to_name
 
 def _get_zip_to_fips_code() -> dict:
     with resources.path("zipcode_features.data", "ZIP_COUNTY_122025.csv") as csv_path:
