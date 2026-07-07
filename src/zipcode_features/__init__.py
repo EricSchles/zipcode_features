@@ -183,7 +183,7 @@ def _get_cbsa_code_to_cbsa_name() -> dict:
     This method gets a mapping from cbsa code to name
     {cbsa code: cbsa name}
     """
-    with resources.path("zipcode_features.data", "cbsa_codes.json") as json_path:
+    with resources.path("zipcode_features.data", "cbsa_codes_bigger.json") as json_path:
         code_to_name = json.load(open(json_path))
     df = pd.DataFrame(columns=["code", "name"])
     df["name"] = code_to_name.values()
