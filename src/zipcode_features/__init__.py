@@ -187,7 +187,7 @@ def _get_cbsa_code_to_cbsa_name() -> dict:
     df = pd.DataFrame(columns=["code", "name"])
     df["name"] = code_to_name.values()
     df["code"] = code_to_name.keys()
-    df["name"] = df["name"].str.replace(" -", "-")
+    df["name"] = df["name"].str.replace(" -", "-").replace("- ", "-")
     df["name"] = df["name"].str.split().str.join(' ')
     code_to_name = df.set_index('code')['name'].to_dict()
     return partial(map_cbsa_code_to_name, code_to_name)
