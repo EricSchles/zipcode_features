@@ -165,9 +165,10 @@ def _get_zip_to_cbsa_code() -> dict:
     mapping is of the form:
     {"zip code": "cbsa code"}
     """
-    with resources.path("zipcode_features.data", "CBSA_ZIP_122025.csv") as csv_path:
+    with resources.path("zipcode_features.data", "cbsa_to_zip.csv") as csv_path:
         df = pd.read_csv(csv_path, dtype={'ZIP': str, "CBSA": str})
     df = correct_code(df, "ZIP")
+    df = correct_code(df, "CBSA")
     mapping = df.set_index('ZIP')['CBSA'].to_dict()
     return partial(map_zip_to_cbsa, mapping)
 
