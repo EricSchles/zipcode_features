@@ -261,7 +261,7 @@ def _get_bls_data() -> pd.DataFrame:
     final_df = pd.DataFrame()
     for csv in csvs:
         with resources.path("zipcode_features.data", csv) as csv_path:
-            df = pd.read_csv(csv_path)
+            df = pd.read_csv(csv_path, dtype={"area_fips": str})
             df = df.drop(cols_to_drop, axis=1)
             final_df = pd.concat([final_df, df], ignore_index=True)
     final_df = final_df.rename({"area_fips": "fips_code"}, axis=1)
